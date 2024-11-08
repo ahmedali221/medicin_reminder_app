@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "26669208216",
+    "project_id": "social-app-71c22",
+    "storage_bucket": "social-app-71c22.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26669208216:android:d344326eadd3c71493b6ed",
+        "android_client_info": {
+          "package_name": "com.clinicapp.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "26669208216-hpj0tf3h282hjfbjfviu9io0hd3og616.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmizQL_F-fGbKt0o0PV60JnHPsIGZqBp0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "26669208216-hpj0tf3h282hjfbjfviu9io0hd3og616.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
