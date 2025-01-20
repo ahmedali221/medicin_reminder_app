@@ -1,34 +1,78 @@
 {
   "project_info": {
-    "project_number": "26669208216",
-    "project_id": "social-app-71c22",
-    "storage_bucket": "social-app-71c22.appspot.com"
+    "project_number": "435493192940",
+    "firebase_url": "https://clinicapp-80110-default-rtdb.firebaseio.com",
+    "project_id": "clinicapp-80110",
+    "storage_bucket": "clinicapp-80110.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:26669208216:android:d344326eadd3c71493b6ed",
+        "mobilesdk_app_id": "1:435493192940:android:e3079cc27a86f4b22c11c9",
         "android_client_info": {
-          "package_name": "com.clinicapp.app"
+          "package_name": "com.example.clinicapp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "26669208216-hpj0tf3h282hjfbjfviu9io0hd3og616.apps.googleusercontent.com",
+          "client_id": "435493192940-0knodid75q9p445hqrejqvta2fto8sh4.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBmizQL_F-fGbKt0o0PV60JnHPsIGZqBp0"
+          "current_key": "AIzaSyDr6XQpUWdVb2obcJLSR2QyKKXgLBDl-Ww"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "26669208216-hpj0tf3h282hjfbjfviu9io0hd3og616.apps.googleusercontent.com",
+              "client_id": "435493192940-0knodid75q9p445hqrejqvta2fto8sh4.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "435493192940-1rpaevn4r15oqev2jbe2q02nsmvs4169.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.clinicapp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435493192940:android:744317369f9a91362c11c9",
+        "android_client_info": {
+          "package_name": "com.medicine_reminder.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "435493192940-0knodid75q9p445hqrejqvta2fto8sh4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr6XQpUWdVb2obcJLSR2QyKKXgLBDl-Ww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "435493192940-0knodid75q9p445hqrejqvta2fto8sh4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "435493192940-1rpaevn4r15oqev2jbe2q02nsmvs4169.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.clinicapp"
+              }
             }
           ]
         }
