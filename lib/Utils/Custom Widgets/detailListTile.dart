@@ -28,7 +28,7 @@ class DetailListTile extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              value,
+              value == "" ? "No Added Notes" : value,
               style: const TextStyle(
                 color: Colors.black87,
               ),

@@ -1,23 +1,27 @@
+import 'package:MedTime/Views/homepage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import '../../Controllers/medicineController.dart';
+import '../../Controllers/userController.dart';
 import '../../Utils/Database/database.dart';
 import '../../Models/user.dart';
 import '../../Utils/Custom Widgets/richText.dart';
+import '../../Utils/Database/databaseHelper.dart';
+import '../../Utils/Database/userDatabaseHelper.dart';
 
-class SignupPage extends StatefulWidget {
+class SignupPage extends ConsumerStatefulWidget {
   @override
   _SignupPageState createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController(); // New controller
-  final _phoneNumberController = TextEditingController(); // New controller
   File? _photo;
+  String? _photoError; // To store photo error message
 
   Future<void> _pickPhoto() async {
     final pickedFile =
@@ -25,25 +29,44 @@ class _SignupPageState extends State<SignupPage> {
     if (pickedFile != null) {
       setState(() {
         _photo = File(pickedFile.path);
+        _photoError = null; // Clear error when photo is selected
       });
     }
   }
 
   Future<void> _signup() async {
+    if (_photo == null) {
+      setState(() {
+        _photoError = "Please select a photo";
+      });
+      return; // Stop signup process if no photo
+    }
+
     if (_formKey.currentState!.validate()) {
       User newUser = User(
-        username: _usernameController.text,
-        password: _passwordController.text,
         name: _nameController.text,
-        email: _emailController.text, // New field
-        phoneNumber: _phoneNumberController.text, // New field
-        photo: _photo?.path, // Save the file path or URL
+        photo: _photo?.path,
       );
-      await DatabaseHelper().insertUser(newUser);
+
+      final databaseInstance = ref.read(databaseInstanceProvider);
+      final userDbHelper = UserDatabaseHelper(databaseInstance);
+
+      await userDbHelper.insertUser(newUser);
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userName', _nameController.text);
+      await prefs.setString('userPhoto', _photo!.path);
+
+      await ref.read(userProvider.notifier).SetUser(newUser);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User registered successfully!')),
       );
-      Navigator.pop(context);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ReminderListScreen()),
+      );
     }
   }
 
@@ -63,31 +86,28 @@ class _SignupPageState extends State<SignupPage> {
                 width: 200,
               ),
               const Text(
-                'Create Your New Account',
+                'Enter Your Name',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1565C0),
+                  color: Color(0xFF1565C0),
                 ),
               ),
-              // CircleAvatar for the photo
               Center(
                 child: GestureDetector(
-                  onTap: _pickPhoto, // Allow tapping to pick a photo
+                  onTap: _pickPhoto,
                   child: Stack(
                     alignment: Alignment.bottomRight,
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundImage: _photo != null
-                            ? FileImage(_photo!) // Display the selected photo
-                            : null, // No photo selected
+                        backgroundImage:
+                            _photo != null ? FileImage(_photo!) : null,
                         child: _photo == null
                             ? const Icon(Icons.person,
-                                size: 50, color: Colors.white) // Default icon
+                                size: 50, color: Colors.white)
                             : null,
                       ),
-                      // + Icon
                       Container(
                         decoration: const BoxDecoration(
                           color: Color.fromARGB(255, 191, 201, 209),
@@ -104,6 +124,12 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
               ),
+              if (_photoError !=
+                  null) // Show error message if photo is not selected
+                Text(
+                  _photoError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
               TextFormField(
                 keyboardType: TextInputType.text,
                 controller: _nameController,
@@ -115,66 +141,9 @@ class _SignupPageState extends State<SignupPage> {
                   return null;
                 },
               ),
-              TextFormField(
-                keyboardType: TextInputType.text,
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: 'Username'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType: TextInputType.emailAddress, // Email input type
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType: TextInputType.phone, // Phone input type
-                controller: _phoneNumberController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType: TextInputType.visiblePassword,
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  return null;
-                },
-              ),
               ElevatedButton(
                 onPressed: _signup,
                 child: const Text('Signup'),
-              ),
-              RichTextButton(
-                normalText: 'Already have an account? ',
-                clickableText: 'Login',
-                onPressed: () {
-                  Navigator.pop(context); // Navigate back to the login page
-                },
-                normalTextColor: Colors.black,
-                clickableTextColor: const Color(0xFF1565C0),
               ),
             ],
           ),

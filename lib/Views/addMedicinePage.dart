@@ -20,24 +20,20 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
   final _nameController = TextEditingController();
   final _dosageController = TextEditingController();
   final _notesController = TextEditingController();
-  final _numberOfTimesController =
-      TextEditingController(); // New controller for number of times
+  final _numberOfTimesController = TextEditingController();
 
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
   Uint8List? _image;
-  int _numberOfTimes = 1; // Number of times to take the medicine
-  List<TimeOfDay> _selectedTimes = []; // List to store selected times
+  int _numberOfTimes = 1;
+  List<TimeOfDay> _selectedTimes = [];
 
-  // Dropdown options for medicine type
   final List<String> _medicineTypes = ['Pills', 'Injection', 'Syrup'];
-  String _selectedType = 'Pills'; // Default selected type
+  String _selectedType = 'Pills';
 
-  // Frequency options
   final List<String> _frequencyTypes = ['Daily', 'Weekly'];
-  String _selectedFrequencyType = 'Daily'; // Default frequency type
+  String _selectedFrequencyType = 'Daily';
 
-  // Day of the week options (for weekly frequency)
   final List<String> _daysOfWeek = [
     'Monday',
     'Tuesday',
@@ -47,18 +43,16 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
     'Saturday',
     'Sunday'
   ];
-  String? _selectedDayOfWeek; // Selected day for weekly frequency
+  String? _selectedDayOfWeek;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the controller with the default value
     _numberOfTimesController.text = _numberOfTimes.toString();
   }
 
   @override
   void dispose() {
-    // Dispose the controllers to avoid memory leaks
     _nameController.dispose();
     _dosageController.dispose();
     _notesController.dispose();
@@ -68,7 +62,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
 
   Future<void> _addMedicine(BuildContext context, WidgetRef ref) async {
     if (_formKey.currentState!.validate()) {
-      // Validate selected times
       if (_selectedTimes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -78,7 +71,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         return;
       }
 
-      // Validate start date
       if (_selectedStartDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -88,7 +80,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         return;
       }
 
-      // Validate end date
       if (_selectedEndDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -98,12 +89,39 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         return;
       }
 
+      if (_selectedEndDate!.isBefore(_selectedStartDate!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('End date must be after the start date'),
+          ),
+        );
+        return;
+      }
+
+      if (_selectedFrequencyType == 'Weekly' && _selectedDayOfWeek == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Please select a day of the week for weekly frequency'),
+          ),
+        );
+        return;
+      }
+
+      // Convert TimeOfDay to String (e.g., "08:00 AM")
+      final times = _selectedTimes.map((time) {
+        final hour = time.hourOfPeriod;
+        final minute = time.minute.toString().padLeft(2, '0');
+        final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+        return '$hour:$minute $period';
+      }).toList();
+
       // Create the Medicine object
       final medicine = Medicine(
         name: _nameController.text,
         type: _selectedType,
         dosage: _dosageController.text,
-        time: _selectedTimes.map((time) => time.format(context)).join(', '),
+        times: times, // Pass the list of times
         frequency: _selectedFrequencyType == 'Weekly'
             ? 'Every $_selectedDayOfWeek'
             : '$_numberOfTimes times a day',
@@ -114,12 +132,10 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
       );
 
       try {
-        // Add the medicine using the provider
         await ref
             .read(medicineControllerProvider.notifier)
             .addMedicine(medicine);
 
-        // Show success dialog
         showDialog(
           context: context,
           builder: (context) => AlertDialog.adaptive(
@@ -139,7 +155,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
           ),
         );
       } catch (e) {
-        // Handle errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to add medicine: ${e.toString()}'),
@@ -147,6 +162,19 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         );
       }
     }
+  }
+
+  void _updateNumberOfTimes(int value) {
+    setState(() {
+      _numberOfTimes = value;
+      _numberOfTimesController.text = value.toString();
+      _selectedTimes = List.generate(
+        _numberOfTimes,
+        (index) => _selectedTimes.length > index
+            ? _selectedTimes[index]
+            : TimeOfDay.now(),
+      );
+    });
   }
 
   @override
@@ -164,7 +192,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
-              spacing: 16,
+              spacing: 15,
               children: [
                 // Image Picker
                 GestureDetector(
@@ -186,7 +214,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                         ? const Icon(
                             Icons.add_a_photo,
                             size: 40,
-                            color: const Color(0xFF1565C0),
+                            color: Color(0xFF1565C0),
                           )
                         : null,
                   ),
@@ -235,6 +263,14 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a dosage';
                     }
+                    if (_selectedType == 'Pills' &&
+                        int.tryParse(value) == null) {
+                      return 'Please enter a valid number of capsules';
+                    }
+                    if (_selectedType == 'Syrup' &&
+                        double.tryParse(value) == null) {
+                      return 'Please enter a valid amount in ml';
+                    }
                     return null;
                   },
                 ),
@@ -247,7 +283,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                   onChanged: (value) {
                     setState(() {
                       _selectedFrequencyType = value!;
-                      _selectedDayOfWeek = null; // Reset day of the week
+                      _selectedDayOfWeek = null;
                     });
                   },
                   validator: (value) {
@@ -284,31 +320,59 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                   labelText: 'Number of Times',
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
-                    setState(() {
-                      _numberOfTimes = int.tryParse(value) ?? 1;
-                    });
+                    final newValue = int.tryParse(value) ?? 1;
+                    if (newValue != _numberOfTimes) {
+                      _updateNumberOfTimes(newValue);
+                    }
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter the number of times';
                     }
+                    if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                      return 'Please enter a valid number of times';
+                    }
                     return null;
                   },
                 ),
 
-                // Generate Times Button
+                // Modify the times generation logic
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
+                      final currentTime = TimeOfDay.now();
+
+                      // Add 5 minutes to the current time
+                      TimeOfDay addFiveMinutes(TimeOfDay time) {
+                        int newMinute = time.minute + 5;
+                        int newHour = time.hour;
+
+                        if (newMinute >= 60) {
+                          newHour += 1;
+                          newMinute %= 60;
+                        }
+
+                        if (newHour > 12) {
+                          newHour %= 12;
+                        }
+
+                        return TimeOfDay(
+                            hour: newHour == 0 ? 12 : newHour,
+                            minute: newMinute);
+                      }
+
                       _selectedTimes = List.generate(
-                        _numberOfTimes,
-                        (index) => TimeOfDay.now(),
-                      );
+                          _numberOfTimes,
+                          (index) => index == 0
+                              ? addFiveMinutes(
+                                  currentTime) // First time is 5 minutes ahead
+                              : addFiveMinutes(_selectedTimes[index -
+                                  1]) // Subsequent times are 5 minutes after previous
+                          );
                     });
                   },
                   child: const Text('Pick Times'),
                 ),
-
                 // Selected Times List
                 ..._selectedTimes.asMap().entries.map((entry) {
                   final index = entry.key;

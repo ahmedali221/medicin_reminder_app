@@ -104,10 +104,10 @@ class CustomSearchDelegate extends SearchDelegate {
                     'Type: ${medicine.type}',
                     style: const TextStyle(fontSize: 16),
                   ),
-                  Text(
-                    'Time: ${medicine.time}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  // Text(
+                  //   'Time: ${medicine.times}',
+                  //   style: const TextStyle(fontSize: 16),
+                  // ),
                   Text(
                     'Frequency: ${medicine.frequency}',
                     style: const TextStyle(fontSize: 16),

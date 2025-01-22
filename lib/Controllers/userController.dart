@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../Models/user.dart';
 
-// Define the UserNotifier class to manage user state
-class UserNotifier extends StateNotifier<User?> {
-  UserNotifier() : super(null); // Initial state is null (no user logged in)
+import '../Utils/Database/userDatabaseHelper.dart';
+import 'medicineController.dart'; // Import your user database helper
 
-  void setUser(User user) {
+class UserNotifier extends StateNotifier<User?> {
+  UserNotifier(this.ref) : super(null);
+
+  final Ref ref; // Ref to access other providers
+
+  Future<void> SetUser(User user) async {
     state = user;
   }
 
@@ -16,5 +19,5 @@ class UserNotifier extends StateNotifier<User?> {
 }
 
 final userProvider = StateNotifierProvider<UserNotifier, User?>((ref) {
-  return UserNotifier();
+  return UserNotifier(ref);
 });

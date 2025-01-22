@@ -72,7 +72,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
           int.tryParse(widget.medicine.frequency.split(' ')[0]) ?? 1;
     }
 
-    _selectedTimes = widget.medicine.time.split(', ').map((time) {
+    // Parse the times from the Medicine object
+    _selectedTimes = widget.medicine.times.map((time) {
       try {
         final cleanedTime = time.replaceAll(RegExp(r'[^0-9:]'), '');
         final parts = cleanedTime.split(':');
@@ -102,12 +103,40 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
         return;
       }
 
+      if (_selectedEndDate.isBefore(_selectedStartDate)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('End date must be after the start date'),
+          ),
+        );
+        return;
+      }
+
+      if (_selectedFrequencyType == 'Weekly' && _selectedDayOfWeek == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Please select a day of the week for weekly frequency'),
+          ),
+        );
+        return;
+      }
+
+      // Convert TimeOfDay to String (e.g., "08:00 AM")
+      final times = _selectedTimes.map((time) {
+        final hour = time.hourOfPeriod;
+        final minute = time.minute.toString().padLeft(2, '0');
+        final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+        return '$hour:$minute $period';
+      }).toList();
+
+      // Create the updated Medicine object
       final updatedMedicine = Medicine(
         id: widget.medicine.id,
         name: _nameController.text,
         type: _selectedType,
         dosage: _dosageController.text,
-        time: _selectedTimes.map((time) => time.format(context)).join(', '),
+        times: times, // Pass the list of times
         frequency: _selectedFrequencyType == 'Weekly'
             ? 'Every $_selectedDayOfWeek'
             : '$_numberOfTimes times a day',
@@ -164,6 +193,7 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
             child: Column(
               spacing: 16,
               children: [
+                // Image Picker
                 GestureDetector(
                   onTap: () async {
                     final imageBytes =
@@ -183,6 +213,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                         : null,
                   ),
                 ),
+
+                // Medicine Name
                 CustomTextInput(
                   controller: _nameController,
                   labelText: 'Name',
@@ -193,6 +225,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     return null;
                   },
                 ),
+
+                // Medicine Type Dropdown
                 CustomDropdownButtonFormField<String>(
                   value: _selectedType,
                   labelText: 'Type',
@@ -209,6 +243,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     return null;
                   },
                 ),
+
+                // Dosage Input
                 CustomTextInput(
                   controller: _dosageController,
                   labelText: _selectedType == 'Pills'
@@ -221,9 +257,19 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a dosage';
                     }
+                    if (_selectedType == 'Pills' &&
+                        int.tryParse(value) == null) {
+                      return 'Please enter a valid number of capsules';
+                    }
+                    if (_selectedType == 'Syrup' &&
+                        double.tryParse(value) == null) {
+                      return 'Please enter a valid amount in ml';
+                    }
                     return null;
                   },
                 ),
+
+                // Frequency Type Dropdown
                 CustomDropdownButtonFormField<String>(
                   value: _selectedFrequencyType,
                   labelText: 'Frequency Type',
@@ -241,6 +287,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     return null;
                   },
                 ),
+
+                // Day of the Week Dropdown (for Weekly Frequency)
                 if (_selectedFrequencyType == 'Weekly')
                   CustomDropdownButtonFormField<String>(
                     value: _selectedDayOfWeek,
@@ -259,6 +307,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                       return null;
                     },
                   ),
+
+                // Number of Times Input
                 CustomTextInput(
                   controller: TextEditingController(
                     text: _numberOfTimes.toString(),
@@ -274,9 +324,14 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter the number of times';
                     }
+                    if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                      return 'Please enter a valid number of times';
+                    }
                     return null;
                   },
                 ),
+
+                // Generate Times Button
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -288,6 +343,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                   },
                   child: const Text('Pick Times'),
                 ),
+
+                // Selected Times List
                 ..._selectedTimes.asMap().entries.map((entry) {
                   final index = entry.key;
                   final time = entry.value;
@@ -301,6 +358,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     },
                   );
                 }).toList(),
+
+                // Start Date Picker
                 CustomDatePicker(
                   labelText: 'Start Date',
                   selectedDate: _selectedStartDate,
@@ -310,6 +369,8 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     });
                   },
                 ),
+
+                // End Date Picker
                 CustomDatePicker(
                   labelText: 'End Date',
                   selectedDate: _selectedEndDate,
@@ -319,10 +380,14 @@ class _EditMedicinePageState extends ConsumerState<EditMedicinePage> {
                     });
                   },
                 ),
+
+                // Notes Input
                 CustomTextInput(
                   controller: _notesController,
                   labelText: 'Notes',
                 ),
+
+                // Save Button
                 ElevatedButton(
                   onPressed: () async {
                     await _updateMedicine(context, ref);

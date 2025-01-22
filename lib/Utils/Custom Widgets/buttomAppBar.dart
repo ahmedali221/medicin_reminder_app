@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class CustomBottomAppBar extends StatelessWidget {
   // final VoidCallback onMedicalTipsPressed;
   final VoidCallback onAddMedicinePressed;
-  final VoidCallback onProfilePressed;
+  // final VoidCallback onProfilePressed;
 
   const CustomBottomAppBar({
     Key? key,
     // required this.onMedicalTipsPressed,
     required this.onAddMedicinePressed,
-    required this.onProfilePressed,
+    // required this.onProfilePressed,
   }) : super(key: key);
 
   @override
@@ -32,11 +32,11 @@ class CustomBottomAppBar extends StatelessWidget {
             tooltip: 'Add Medicine',
           ),
           // User Profile Button
-          IconButton.filled(
-            onPressed: onProfilePressed,
-            icon: const Icon(Icons.person),
-            tooltip: 'Profile',
-          ),
+          // IconButton.filled(
+          //   onPressed: onProfilePressed,
+          //   icon: const Icon(Icons.person),
+          //   tooltip: 'Profile',
+          // ),
         ],
       ),
     );

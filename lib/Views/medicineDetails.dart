@@ -1,8 +1,10 @@
+import 'package:MedTime/Models/medicineHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
 import '../Controllers/medicineController.dart'; // Import the MedicineController
+import '../Controllers/medicineHistoryController.dart';
 import '../Models/medicine.dart';
 import '../Utils/Custom Widgets/detailListTile.dart';
 import 'editMedicine.dart'; // Import the EditMedicinePage
@@ -38,8 +40,48 @@ class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
     }
   }
 
+  Future<void> _addHistoryEntry(String status) async {
+    MedicineHistory history = MedicineHistory(
+      medicine: _currentMedicine, // Pass the Medicine object directly
+      status: status,
+      timestamp: DateTime.now().toLocal(),
+    );
+
+    await ref
+        .read(medicineHistoryControllerProvider.notifier)
+        .addMedicineHistory(history);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Medicine $status successfully!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Custom Column with spacing
+  Widget _buildSpacedColumn({
+    required List<Widget> children,
+    double spacing = 16.0,
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+  }) {
+    return Column(
+      crossAxisAlignment: crossAxisAlignment,
+      children: children
+          .map((child) => Padding(
+                padding: EdgeInsets.only(bottom: spacing),
+                child: child,
+              ))
+          .toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentMedicine.name),
@@ -68,17 +110,17 @@ class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isPortrait ? 16.0 : 24.0),
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: _buildSpacedColumn(
+            spacing: isPortrait ? 16.0 : 24.0,
             children: [
               // Display the medicine photo
               if (_currentMedicine.image != null)
                 Center(
                   child: Container(
-                    width: 120,
-                    height: 120,
+                    width: isPortrait ? 120 : 160,
+                    height: isPortrait ? 120 : 160,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.grey[200],
@@ -92,10 +134,10 @@ class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 20),
 
               // Medicine details using custom DetailListTile
-              Column(
+              _buildSpacedColumn(
+                spacing: isPortrait ? 12.0 : 16.0,
                 children: [
                   DetailListTile(
                     title: 'Name',
@@ -120,10 +162,6 @@ class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
                           _currentMedicine.frequency.replaceAll('Every ', ''),
                     ),
                   DetailListTile(
-                    title: 'Times',
-                    value: _currentMedicine.time,
-                  ),
-                  DetailListTile(
                     title: 'Start Date',
                     value: _formatDate(_currentMedicine.startDate),
                   ),
@@ -139,45 +177,28 @@ class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
                 ],
               ),
 
-              const SizedBox(height: 20),
-
               // Take Medicine Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Show an alert dialog
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog.adaptive(
-                          icon: const Icon(Icons.info_outline,
-                              color: Color(0xFF1565C0), size: 40),
-                          title: const Text('Coming Soon'),
-                          content: const Text(
-                              'Taking will be available in a future update. Stay tuned!'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.medical_services),
-                  label: const Text('Take Medicine'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
+              Row(
+                children: [
+                  // Snooze Button
 
-              const SizedBox(height: 10),
+                  // Skip Button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await _addHistoryEntry(
+                            'Skipped'); // Add history with "Skipped" status
+                      },
+                      icon: const Icon(Icons.close),
+                      label: const Text('Skip'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.red, // Custom color for skip
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
               // Delete Button
               SizedBox(

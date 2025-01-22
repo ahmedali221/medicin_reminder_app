@@ -1,36 +1,20 @@
+import 'package:MedTime/Utils/Api/View/topicsListPage.dart';
+import 'package:MedTime/notificatioPage.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:device_preview/device_preview.dart'; // Import device_preview
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workmanager/workmanager.dart';
 import 'Utils/Local Notifications/NotificationScheduler.dart';
 import 'Views/splashScreen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  AwesomeNotifications().initialize(
-    'resource://drawable/icon', // Path to your small icon
-    [
-      NotificationChannel(
-        channelKey: 'reminder_channel',
-        channelName: 'Reminder Notifications',
-        channelDescription: 'Notification channel for reminder notifications',
-        importance: NotificationImportance.High,
-        defaultColor: const Color(0xFF1565C0),
-        ledColor: Colors.white,
-      ),
-    ],
-  );
-
   runApp(
-    DevicePreview(
-      enabled: true, // Enable device preview
-      tools: const [
-        ...DevicePreview.defaultTools,
-      ],
-      builder: (context) => const ProviderScope(
-        child: MyApp(),
-      ),
+    const ProviderScope(
+      child: MyApp(),
     ),
   );
 }
@@ -42,9 +26,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      useInheritedMediaQuery: true, // Required for device_preview
-      locale: DevicePreview.locale(context), // Set locale for device_preview
-      builder: DevicePreview.appBuilder, // Apply device_preview builder
       theme: ThemeData(
         // Your existing theme configuration
         colorScheme: const ColorScheme.light(
@@ -69,11 +50,12 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: 'Cera Pro',
         appBarTheme: const AppBarTheme(
-          backgroundColor: const Color(0xFF1565C0),
+          backgroundColor: Color(0xFF1565C0),
           foregroundColor: Colors.white,
           elevation: 4,
           centerTitle: true,
           titleTextStyle: TextStyle(
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -99,7 +81,24 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-
+        chipTheme: ChipThemeData(
+          backgroundColor: Colors.grey.shade100,
+          selectedColor: const Color(0xFF1565C0),
+          checkmarkColor: Colors.white,
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            color: Colors.black, // Text color for unselected chips
+          ),
+          secondaryLabelStyle: const TextStyle(
+            fontSize: 14,
+            color: Colors.white, // Text color for selected chips
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          side: BorderSide.none, // No border for chips
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.grey.shade100,

@@ -1,69 +1,60 @@
+import 'package:workmanager/workmanager.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
-
 import '../../Models/medicine.dart';
 
 class NotificationScheduler {
-  static Future<void> scheduleNotificationForMedicine(Medicine medicine) async {
-    final id = medicine.id! * 1000 +
-        DateTime.now().millisecondsSinceEpoch % 1000; // Unique ID
-    final title = 'Reminder: ${medicine.name}';
-    final body = 'Time to take ${medicine.dosage} of ${medicine.name}';
-    final scheduledTime = _parseTime(medicine.time); // Parse reminder time
-
-    if (scheduledTime != null) {
-      print("Scheduling notification for $scheduledTime");
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          icon: 'resource://drawable/icon', // For Android
-
-          id: id,
-          channelKey: 'reminder_channel',
-          title: title,
-          body: body, // Add reminder message
-          notificationLayout: NotificationLayout.Default,
-        ),
-        schedule: NotificationCalendar.fromDate(
-          date: scheduledTime, // Schedule at the specified time
-        ),
-      );
-    }
-  }
-
-  static DateTime? _parseTime(String time) {
+  static Future<void> scheduleNotificationsForMedicine(
+      Medicine medicine) async {
     try {
-      final now = DateTime.now();
+      // Validate medicine data
+      if (!medicine.isValid()) {
+        print("Error: Medicine data is incomplete");
+        return;
+      }
 
-      // Handle 12-hour format (e.g., "1:50 PM")
-      if (time.contains("AM") || time.contains("PM")) {
-        final timeParts = time.split(' '); // Split into time and period (AM/PM)
-        final period = timeParts[1]; // AM or PM
-        final hourMinute =
-            timeParts[0].split(':'); // Split into hours and minutes
+      // Parse the scheduled times
+      final scheduledTimes = medicine.scheduledTimes;
+      if (scheduledTimes.isEmpty) {
+        print("Error: No valid times found");
+        return;
+      }
 
-        var hour = int.parse(hourMinute[0]);
-        final minute = int.parse(hourMinute[1]);
-
-        // Convert 12-hour format to 24-hour format
-        if (period == "PM" && hour != 12) {
-          hour += 12;
-        } else if (period == "AM" && hour == 12) {
-          hour = 0;
+      // Iterate over each scheduled time and schedule a notification
+      for (var i = 0; i < scheduledTimes.length; i++) {
+        final scheduledTime = scheduledTimes[i];
+        if (scheduledTime == null) {
+          print("Error: Failed to parse time at index $i");
+          continue;
         }
 
-        return DateTime(now.year, now.month, now.day, hour, minute);
-      }
+        // Ensure the scheduled time is in the future
+        if (scheduledTime.isBefore(DateTime.now())) {
+          print("Error: Scheduled time at index $i is in the past");
+          continue;
+        }
 
-      // Handle 24-hour format (e.g., "13:50")
-      else {
-        final timeParts = time.split(':');
-        final hour = int.parse(timeParts[0]);
-        final minute = int.parse(timeParts[1]);
+        // Generate a unique ID for the notification
+        final id = medicine.id! * 1000 + i; // Ensure `medicine.id` is not null
 
-        return DateTime(now.year, now.month, now.day, hour, minute);
+        // Schedule the notification using WorkManager
+        await Workmanager().registerOneOffTask(
+          "medicine_reminder_$id", // Unique task name
+          "medicine_reminder_task", // Task type
+          inputData: <String, dynamic>{
+            'id': id,
+            'title': 'Reminder: ${medicine.name}',
+            'body':
+                'Time to take ${medicine.dosage} ${medicine.type} of ${medicine.name}',
+          },
+          initialDelay: scheduledTime.difference(DateTime.now()),
+        );
+
+        print(
+            "Scheduled notification for ${medicine.name} at $scheduledTime (ID: $id)");
       }
     } catch (e) {
-      print("Failed to parse time: $e");
-      return null;
+      print("Error scheduling notifications: $e");
+      // Handle the error (e.g., display an error message to the user)
     }
   }
 }

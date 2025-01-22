@@ -60,35 +60,15 @@ class UserProfilePage extends ConsumerWidget {
                       ),
                     ),
                     const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(Icons.alternate_email,
-                          color: const Color(0xFF1565C0)),
-                      title: const Text('Username'),
-                      subtitle: Text(
-                        user.username,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(Icons.email,
-                          color: const Color(0xFF1565C0)),
-                      title: const Text('Email'),
-                      subtitle: Text(
-                        user.email,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(Icons.phone,
-                          color: const Color(0xFF1565C0)),
-                      title: const Text('Phone Number'),
-                      subtitle: Text(
-                        user.phoneNumber,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
+                    // ListTile(
+                    //   leading: const Icon(Icons.alternate_email,
+                    //       color: const Color(0xFF1565C0)),
+                    //   title: const Text('Username'),
+                    //   subtitle: Text(
+                    //     user.username,
+                    //     style: const TextStyle(fontSize: 16),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
