@@ -33,6 +33,15 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(
+        child: Text(
+          'Enter your medicine name to search',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
+
     final medicines = ref.watch(medicineControllerProvider);
 
     // Filter medicines based on the query
@@ -70,8 +79,6 @@ class CustomSearchDelegate extends SearchDelegate {
                 MaterialPageRoute(
                   builder: (context) => MedicineDetailsPage(
                     medicine: medicine,
-                    medicineController:
-                        ref.read(medicineControllerProvider.notifier),
                   ),
                 ),
               );
@@ -128,6 +135,15 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(
+        child: Text(
+          'Enter your medicine name ',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
+
     final medicines = ref.watch(medicineControllerProvider);
 
     final filteredMedicines = medicines.where((medicine) {
@@ -166,49 +182,35 @@ class CustomSearchDelegate extends SearchDelegate {
                 MaterialPageRoute(
                   builder: (context) => MedicineDetailsPage(
                     medicine: medicine,
-                    medicineController:
-                        ref.read(medicineControllerProvider.notifier),
                   ),
                 ),
               );
             },
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Medicine Image
-                  Container(
-                    width: 50, // Fixed width for the image
-                    height: 50, // Fixed height for the image
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors
-                          .grey[200], // Background color for the container
-                    ),
-                    child: medicine.image != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.memory(
-                              medicine.image!,
-                              fit: BoxFit
-                                  .cover, // Ensure the image covers the container
-                            ),
-                          )
-                        : const Icon(
-                            Icons.medication,
-                            size: 30,
-                            color: Colors.grey,
+                  medicine.image != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            medicine.image!,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
                           ),
-                  ),
-                  const SizedBox(width: 16), // Spacing between image and text
-                  // Medicine Name
-                  Expanded(
-                    child: Text(
-                      medicine.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        )
+                      : const Icon(
+                          Icons.medication,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
+                  const SizedBox(width: 16),
+                  Text(
+                    medicine.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],

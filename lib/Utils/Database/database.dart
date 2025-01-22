@@ -1,7 +1,8 @@
-import 'package:clinicapp/Models/medicine.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../Models/user.dart';
+import '../Local Notifications/NotificationScheduler.dart';
+import '../../Models/medicine.dart';
+import '../../Models/user.dart';
 
 class DatabaseHelper {
   static Database? _database;
@@ -16,9 +17,9 @@ class DatabaseHelper {
     String Databasepath = await getDatabasesPath();
     String path = join(Databasepath, 'medicine.db');
     Database medicineDb = await openDatabase(path,
-        version: 6,
+        version: 2, // Increment version
         onCreate: _onCreate,
-        onUpgrade: _onUpgrade); // Increment version
+        onUpgrade: _onUpgrade);
     return medicineDb;
   }
 
@@ -34,7 +35,8 @@ class DatabaseHelper {
         frequency TEXT,
         startDate TEXT,
         endDate TEXT,
-        notes TEXT
+        notes TEXT,
+        image BLOB
       )
     ''');
 
@@ -45,6 +47,8 @@ class DatabaseHelper {
         username TEXT UNIQUE,
         password TEXT,
         name TEXT,
+        email TEXT, -- New field
+        phoneNumber TEXT, -- New field
         photo TEXT
       )
     ''');
@@ -53,7 +57,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 6) {
+    if (oldVersion < 2) {
       // Step 1: Drop the old reminders table (if needed)
       await db.execute('DROP TABLE IF EXISTS reminders');
 
@@ -73,13 +77,15 @@ class DatabaseHelper {
       )
       ''');
 
-      // Step 3: Create the users table (if it doesn't exist)
+      // Step 3: Create the users table with the new schema
       await db.execute('''
       CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
         password TEXT,
         name TEXT,
+        email TEXT, -- New field
+        phoneNumber TEXT, -- New field
         photo TEXT
       )
       ''');
@@ -110,6 +116,23 @@ class DatabaseHelper {
     Database db = await database;
     int medicineId = await db.insert('reminders', medicine.toMap());
     print("$medicineId Added");
+
+    // Create a new Medicine object with the updated ID
+    final updatedMedicine = Medicine(
+      id: medicineId,
+      name: medicine.name,
+      type: medicine.type,
+      dosage: medicine.dosage,
+      time: medicine.time,
+      frequency: medicine.frequency,
+      startDate: medicine.startDate,
+      endDate: medicine.endDate,
+      notes: medicine.notes,
+    );
+    // Schedule a notification for the new medicine
+    await NotificationScheduler.scheduleNotificationForMedicine(
+        updatedMedicine);
+
     return medicineId;
   }
 
@@ -118,6 +141,8 @@ class DatabaseHelper {
     int medicineId = await db.update('reminders', medicine.toMap(),
         where: 'id=?', whereArgs: [medicine.id]);
     print("$medicineId Updated");
+    await NotificationScheduler.scheduleNotificationForMedicine(medicine);
+
     return medicineId;
   }
 

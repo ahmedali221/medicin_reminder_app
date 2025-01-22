@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:clinicapp/Models/medicine.dart';
-import 'package:clinicapp/Database/database.dart';
+
+import '../Utils/Database/database.dart';
+import '../Models/medicine.dart';
 
 // Step 1: Create a Provider for DatabaseHelper
 final databaseHelperProvider = Provider<DatabaseHelper>((ref) {
@@ -10,26 +11,25 @@ final databaseHelperProvider = Provider<DatabaseHelper>((ref) {
 class MedicineNotifier extends StateNotifier<List<Medicine>> {
   final DatabaseHelper _dbHelper;
 
-  MedicineNotifier(this._dbHelper) : super([]);
+  MedicineNotifier(this._dbHelper) : super([]) {
+    fetchMedicines(); // Load medicines when the provider is created
+  }
 
   Future<void> fetchMedicines() async {
     final medicines = await _dbHelper.getMedicines();
     state = medicines;
   }
 
-  // Add a new medicine
   Future<void> addMedicine(Medicine medicine) async {
     await _dbHelper.insertMedicine(medicine);
     await fetchMedicines(); // Refresh the list
   }
 
-  // Update an existing medicine
   Future<void> updateMedicine(Medicine medicine) async {
     await _dbHelper.updateMedicine(medicine);
     await fetchMedicines(); // Refresh the list
   }
 
-  // Delete a medicine by ID
   Future<void> deleteMedicine(int id) async {
     await _dbHelper.deleteMedicine(id);
     await fetchMedicines(); // Refresh the list

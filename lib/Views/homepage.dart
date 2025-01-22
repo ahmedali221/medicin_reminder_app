@@ -1,18 +1,19 @@
-import 'package:clinicapp/Views/medicalTips.dart';
-import 'package:clinicapp/Views/UserPages/userProfilePage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:clinicapp/Controllers/medicineController.dart';
-import 'package:clinicapp/Models/medicine.dart';
-import 'package:clinicapp/Views/addMedicinePage.dart';
+
+import '../Controllers/medicineController.dart';
 import '../Controllers/userController.dart';
+import '../Models/medicine.dart';
 import '../Utils/Custom Widgets/buttomAppBar.dart';
 import '../Utils/Custom Widgets/dateSliderWidget.dart';
 import '../Utils/Custom Widgets/detailRow.dart';
 import '../Utils/Custom Widgets/searcBar.dart';
 import '../Utils/Custom Widgets/userDetailsBar.dart';
 import '../Utils/icons.dart';
+import 'UserPages/userProfilePage.dart';
+import 'addMedicinePage.dart';
 import 'medicineDetails.dart';
 
 class ReminderListScreen extends ConsumerStatefulWidget {
@@ -38,6 +39,31 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
     }).toList();
   }
 
+  // Function to show exit confirmation dialog
+  Future<bool> _onWillPop() async {
+    final shouldExit = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Are you sure you want to exit the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              SystemNavigator.pop(); // Exit the app to the phone homepage
+            },
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final medicines = ref.watch(medicineControllerProvider);
@@ -45,203 +71,198 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final user = ref.watch(userProvider); // Access user data from provider
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // User details Sliver
-          SliverToBoxAdapter(
-            child: UserDetailsBar(
-              userName: user?.name ?? "Guest", // Use user name from provider
-              userPhotoUrl: user?.photo ?? "", // Use photo URL from provider
-              onSearchPressed: () {
-                showSearch(
-                    context: context, delegate: CustomSearchDelegate(ref));
-              },
-            ),
-          ),
-          // Date slider Sliver
-          SliverToBoxAdapter(
-            child: DateSlider(
-              selectedDate: _selectedDate,
-              onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
-              },
-            ),
-          ),
-          // "To Take" heading Sliver
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'To Take',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontSize: screenWidth * 0.06, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
-                    ),
+    // Wrap the Scaffold with WillPopScope to handle back button press
+    return WillPopScope(
+      onWillPop: _onWillPop, // Use the _onWillPop function here
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            // User details Sliver
+            SliverToBoxAdapter(
+              child: UserDetailsBar(
+                userName: user?.name ?? "Guest", // Use user name from provider
+                userPhotoUrl: user?.photo ?? "", // Use photo URL from provider
+                onSearchPressed: () {
+                  showSearch(
+                      context: context, delegate: CustomSearchDelegate(ref));
+                },
               ),
             ),
-          ),
-          // Medicine list Sliver
-          filteredMedicines.isEmpty
-              ? SliverFillRemaining(
-                  child: Center(
-                    child: Text(
-                      _selectedDate == null
-                          ? "No medicines added yet!"
-                          : "No medicines found for the selected date.",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.045, // Responsive font size
-                        color: Colors.grey,
+            // Date slider Sliver
+            SliverToBoxAdapter(
+              child: DateSlider(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+              ),
+            ),
+            // "To Take" heading Sliver
+            SliverToBoxAdapter(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  'To Take',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontSize: screenWidth * 0.06, // Responsive font size
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[900],
+                      ),
+                ),
+              ),
+            ),
+            // Medicine list Sliver
+            filteredMedicines.isEmpty
+                ? SliverFillRemaining(
+                    child: Center(
+                      child: Text(
+                        _selectedDate == null
+                            ? "No medicines added yet!"
+                            : "No medicines found for the selected date.",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.045, // Responsive font size
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
-                  ),
-                )
-              : SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final medicine = filteredMedicines[index];
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final medicine = filteredMedicines[index];
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        child: Card(
-                          color: Colors.white,
-                          elevation: 6,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
                           ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MedicineDetailsPage(
-                                    medicine: medicine,
-                                    medicineController: ref.read(
-                                        medicineControllerProvider.notifier),
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                spacing: 15,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Image or Icon on the left
-                                  Container(
-                                    width:
-                                        screenWidth * 0.3, // Responsive width
-                                    height:
-                                        screenWidth * 0.2, // Responsive height
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.grey[200],
+                          child: Card(
+                            color: Colors.white,
+                            elevation: 6,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MedicineDetailsPage(
+                                      medicine: medicine,
                                     ),
-                                    child: medicine.image != null
-                                        ? ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            child: Image.memory(
-                                              medicine.image!,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.medication,
-                                            size: 40,
-                                            color: Colors.grey,
-                                          ),
                                   ),
-                                  // Medicine details on the right
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Medicine Name
-                                        Text(
-                                          medicine.name,
-                                          style: TextStyle(
-                                            fontSize: screenWidth *
-                                                0.045, // Responsive font size
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.blue[900],
-                                          ),
-                                        ),
-                                        // Dosage
-                                        buildDetailRow(
-                                            'Dosage', medicine.dosage),
-                                        // Type (Icon-based)
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              medicineTypeIcons[
-                                                      medicine.type] ??
-                                                  Icons.medication,
-                                              size: 20,
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  spacing: 15,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Image or Icon on the left
+                                    Container(
+                                      width:
+                                          screenWidth * 0.3, // Responsive width
+                                      height: screenWidth *
+                                          0.2, // Responsive height
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      child: medicine.image != null
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: Image.memory(
+                                                medicine.image!,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.medication,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                    ),
+                                    // Medicine details on the right
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Medicine Name
+                                          Text(
+                                            medicine.name,
+                                            style: TextStyle(
+                                              fontSize: screenWidth *
+                                                  0.045, // Responsive font size
+                                              fontWeight: FontWeight.bold,
                                               color: Colors.blue[900],
                                             ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              medicine.type,
-                                              style: TextStyle(
-                                                fontSize: screenWidth * 0.04,
-                                                color: Colors.grey[700],
+                                          ),
+                                          // Dosage
+                                          buildDetailRow(
+                                              'Dosage', medicine.dosage),
+                                          // Type (Icon-based)
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                medicineTypeIcons[
+                                                        medicine.type] ??
+                                                    Icons.medication,
+                                                size: 20,
+                                                color: Colors.blue[900],
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        // Time
-                                        buildDetailRow('Time', medicine.time),
-                                      ],
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                medicine.type,
+                                                style: TextStyle(
+                                                  fontSize: screenWidth * 0.04,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          // Time
+                                          buildDetailRow('Time', medicine.time),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    childCount: filteredMedicines.length,
+                        );
+                      },
+                      childCount: filteredMedicines.length,
+                    ),
                   ),
-                ),
-        ],
-      ),
-      // Bottom Navigation Bar with Add Button and Medical Tips
-      bottomNavigationBar: CustomBottomAppBar(
-        onMedicalTipsPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MedicalTipsPage(),
-            ),
-          );
-        },
-        onAddMedicinePressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddMedicinePage(),
-            ),
-          );
-        },
-        onProfilePressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => UserProfilePage(),
-            ),
-          );
-        },
+          ],
+        ),
+        // Bottom Navigation Bar with Add Button and Medical Tips
+        bottomNavigationBar: CustomBottomAppBar(
+          onAddMedicinePressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddMedicinePage(),
+              ),
+            );
+          },
+          onProfilePressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserProfilePage(),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

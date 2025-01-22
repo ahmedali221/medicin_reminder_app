@@ -1,9 +1,13 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:clinicapp/Controllers/medicineController.dart';
-import 'package:clinicapp/Models/medicine.dart';
+
+import '../Controllers/medicineController.dart';
+import '../Models/medicine.dart';
 import '../Utils/Custom Widgets/customInputText.dart';
+import '../Utils/Custom Widgets/customDropdownButtonFormField.dart';
+import '../Utils/Custom Widgets/customDatePicker.dart';
+import '../Utils/Custom Widgets/customTimePicker.dart';
 import '../Utils/Helpers/medicineFormHelper.dart';
 
 class AddMedicinePage extends ConsumerStatefulWidget {
@@ -16,6 +20,8 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
   final _nameController = TextEditingController();
   final _dosageController = TextEditingController();
   final _notesController = TextEditingController();
+  final _numberOfTimesController =
+      TextEditingController(); // New controller for number of times
 
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
@@ -44,10 +50,113 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
   String? _selectedDayOfWeek; // Selected day for weekly frequency
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize the controller with the default value
+    _numberOfTimesController.text = _numberOfTimes.toString();
+  }
+
+  @override
+  void dispose() {
+    // Dispose the controllers to avoid memory leaks
+    _nameController.dispose();
+    _dosageController.dispose();
+    _notesController.dispose();
+    _numberOfTimesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addMedicine(BuildContext context, WidgetRef ref) async {
+    if (_formKey.currentState!.validate()) {
+      // Validate selected times
+      if (_selectedTimes.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please pick and select times'),
+          ),
+        );
+        return;
+      }
+
+      // Validate start date
+      if (_selectedStartDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a start date'),
+          ),
+        );
+        return;
+      }
+
+      // Validate end date
+      if (_selectedEndDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select an end date'),
+          ),
+        );
+        return;
+      }
+
+      // Create the Medicine object
+      final medicine = Medicine(
+        name: _nameController.text,
+        type: _selectedType,
+        dosage: _dosageController.text,
+        time: _selectedTimes.map((time) => time.format(context)).join(', '),
+        frequency: _selectedFrequencyType == 'Weekly'
+            ? 'Every $_selectedDayOfWeek'
+            : '$_numberOfTimes times a day',
+        startDate: _selectedStartDate!.toLocal().toString().split(' ')[0],
+        endDate: _selectedEndDate!.toLocal().toString().split(' ')[0],
+        notes: _notesController.text,
+        image: _image,
+      );
+
+      try {
+        // Add the medicine using the provider
+        await ref
+            .read(medicineControllerProvider.notifier)
+            .addMedicine(medicine);
+
+        // Show success dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog.adaptive(
+            icon:
+                const Icon(Icons.verified, color: Color(0xFF1565C0), size: 40),
+            title: const Text('Success'),
+            content: const Text('Medicine added successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        // Handle errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add medicine: ${e.toString()}'),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Medicine'),
+        title: const Text(
+          'Add Medicine',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -55,6 +164,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
+              spacing: 16,
               children: [
                 // Image Picker
                 GestureDetector(
@@ -69,14 +179,18 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                   },
                   child: CircleAvatar(
                     radius: 50,
+                    backgroundColor: Colors.white,
                     backgroundImage:
                         _image != null ? MemoryImage(_image!) : null,
                     child: _image == null
-                        ? const Icon(Icons.add_a_photo, size: 40)
+                        ? const Icon(
+                            Icons.add_a_photo,
+                            size: 40,
+                            color: const Color(0xFF1565C0),
+                          )
                         : null,
                   ),
                 ),
-                const SizedBox(height: 16),
 
                 // Medicine Name
                 CustomTextInput(
@@ -89,18 +203,12 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Medicine Type Dropdown
-                DropdownButtonFormField<String>(
+                CustomDropdownButtonFormField<String>(
                   value: _selectedType,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: _medicineTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
+                  labelText: 'Type',
+                  items: _medicineTypes,
                   onChanged: (value) {
                     setState(() {
                       _selectedType = value!;
@@ -113,7 +221,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Dosage Input
                 CustomTextInput(
@@ -131,19 +238,12 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Frequency Type Dropdown
-                DropdownButtonFormField<String>(
+                CustomDropdownButtonFormField<String>(
                   value: _selectedFrequencyType,
-                  decoration:
-                      const InputDecoration(labelText: 'Frequency Type'),
-                  items: _frequencyTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
+                  labelText: 'Frequency Type',
+                  items: _frequencyTypes,
                   onChanged: (value) {
                     setState(() {
                       _selectedFrequencyType = value!;
@@ -157,20 +257,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Day of the Week Dropdown (for Weekly Frequency)
                 if (_selectedFrequencyType == 'Weekly')
-                  DropdownButtonFormField<String>(
+                  CustomDropdownButtonFormField<String>(
                     value: _selectedDayOfWeek,
-                    decoration:
-                        const InputDecoration(labelText: 'Day of the Week'),
-                    items: _daysOfWeek.map((day) {
-                      return DropdownMenuItem(
-                        value: day,
-                        child: Text(day),
-                      );
-                    }).toList(),
+                    labelText: 'Day of the Week',
+                    items: _daysOfWeek,
                     onChanged: (value) {
                       setState(() {
                         _selectedDayOfWeek = value!;
@@ -184,13 +277,10 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                       return null;
                     },
                   ),
-                const SizedBox(height: 16),
 
                 // Number of Times Input
                 CustomTextInput(
-                  controller: TextEditingController(
-                    text: _numberOfTimes.toString(),
-                  ),
+                  controller: _numberOfTimesController,
                   labelText: 'Number of Times',
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -205,7 +295,6 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Generate Times Button
                 ElevatedButton(
@@ -217,138 +306,56 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                       );
                     });
                   },
-                  child: const Text('Generate Times'),
+                  child: const Text('Pick Times'),
                 ),
-                const SizedBox(height: 16),
 
                 // Selected Times List
                 ..._selectedTimes.asMap().entries.map((entry) {
                   final index = entry.key;
                   final time = entry.value;
-                  return ListTile(
-                    title: Text(
-                      'Time ${index + 1}: ${time.format(context)}',
-                    ),
-                    trailing: const Icon(Icons.access_time),
-                    onTap: () async {
-                      final pickedTime =
-                          await MedicineFormHelper.selectTime(context, time);
-                      if (pickedTime != null) {
-                        setState(() {
-                          _selectedTimes[index] = pickedTime;
-                        });
-                      }
+                  return CustomTimePicker(
+                    labelText: 'Time ${index + 1}',
+                    selectedTime: time,
+                    onTimeSelected: (pickedTime) {
+                      setState(() {
+                        _selectedTimes[index] = pickedTime;
+                      });
                     },
                   );
                 }).toList(),
 
                 // Start Date Picker
-                ListTile(
-                  title: Text(
-                    _selectedStartDate == null
-                        ? 'Select Start Date'
-                        : 'Selected Start Date: ${_selectedStartDate!.toLocal().toString().split(' ')[0]}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final pickedDate =
-                        await MedicineFormHelper.selectStartDate(context);
-                    if (pickedDate != null) {
-                      setState(() {
-                        _selectedStartDate = pickedDate;
-                        if (_selectedEndDate != null &&
-                            _selectedEndDate!.isBefore(pickedDate)) {
-                          _selectedEndDate = null;
-                        }
-                      });
-                    }
+                CustomDatePicker(
+                  labelText: 'Start Date',
+                  selectedDate: _selectedStartDate,
+                  onDateSelected: (pickedDate) {
+                    setState(() {
+                      _selectedStartDate = pickedDate;
+                    });
                   },
                 ),
 
                 // End Date Picker
-                ListTile(
-                  title: Text(
-                    _selectedEndDate == null
-                        ? 'Select End Date'
-                        : 'Selected End Date: ${_selectedEndDate!.toLocal().toString().split(' ')[0]}',
-                  ),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final pickedDate = await MedicineFormHelper.selectEndDate(
-                        context, _selectedStartDate!);
-                    if (pickedDate != null) {
-                      setState(() {
-                        _selectedEndDate = pickedDate;
-                      });
-                    }
+                CustomDatePicker(
+                  labelText: 'End Date',
+                  selectedDate: _selectedEndDate,
+                  onDateSelected: (pickedDate) {
+                    setState(() {
+                      _selectedEndDate = pickedDate;
+                    });
                   },
                 ),
-                const SizedBox(height: 16),
 
                 // Notes Input
                 CustomTextInput(
                   controller: _notesController,
                   labelText: 'Notes',
                 ),
-                const SizedBox(height: 20),
 
                 // Save Button
                 ElevatedButton(
                   onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      if (_selectedTimes.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please generate and select times'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (_selectedStartDate == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please select a start date'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (_selectedEndDate == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please select an end date'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      final medicine = Medicine(
-                        name: _nameController.text,
-                        type: _selectedType,
-                        dosage: _dosageController.text,
-                        time: _selectedTimes
-                            .map((time) => time.format(context))
-                            .join(', '),
-                        frequency: _selectedFrequencyType == 'Weekly'
-                            ? 'Every $_selectedDayOfWeek'
-                            : '$_numberOfTimes times a day',
-                        startDate: _selectedStartDate!
-                            .toLocal()
-                            .toString()
-                            .split(' ')[0],
-                        endDate: _selectedEndDate!
-                            .toLocal()
-                            .toString()
-                            .split(' ')[0],
-                        notes: _notesController.text,
-                        image: _image,
-                      );
-
-                      await ref
-                          .read(medicineControllerProvider.notifier)
-                          .addMedicine(medicine);
-
-                      Navigator.pop(context);
-                    }
+                    await _addMedicine(context, ref);
                   },
                   child: const Text('Save'),
                 ),

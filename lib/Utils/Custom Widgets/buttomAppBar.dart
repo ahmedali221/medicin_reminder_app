@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class CustomBottomAppBar extends StatelessWidget {
-  final VoidCallback onMedicalTipsPressed;
+  // final VoidCallback onMedicalTipsPressed;
   final VoidCallback onAddMedicinePressed;
   final VoidCallback onProfilePressed;
 
   const CustomBottomAppBar({
     Key? key,
-    required this.onMedicalTipsPressed,
+    // required this.onMedicalTipsPressed,
     required this.onAddMedicinePressed,
     required this.onProfilePressed,
   }) : super(key: key);
@@ -18,12 +18,12 @@ class CustomBottomAppBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Medical Tips Button
-          IconButton.filled(
-            onPressed: onMedicalTipsPressed,
-            icon: const Icon(Icons.medical_services),
-            tooltip: 'Medical Tips',
-          ),
+          // // Medical Tips Button
+          // IconButton.filled(
+          //   onPressed: onMedicalTipsPressed,
+          //   icon: const Icon(Icons.medical_services),
+          //   tooltip: 'Medical Tips',
+          // ),
           // Add Medicine Button
           IconButton.outlined(
             onPressed: onAddMedicinePressed,

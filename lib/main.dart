@@ -1,29 +1,36 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:clinicapp/Views/Auth/loginPage.dart';
-import 'package:clinicapp/Views/homepage.dart';
-
+import 'package:device_preview/device_preview.dart'; // Import device_preview
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'Utils/Local Notifications/NotificationScheduler.dart';
+import 'Views/splashScreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   AwesomeNotifications().initialize(
-    'resource://drawable/notification_icon', // Path to your small icon
+    'resource://drawable/icon', // Path to your small icon
     [
       NotificationChannel(
-        channelKey: 'basic_channel',
-        channelName: 'Basic Notifications',
-        channelDescription: 'Notification channel for basic notifications',
+        channelKey: 'reminder_channel',
+        channelName: 'Reminder Notifications',
+        channelDescription: 'Notification channel for reminder notifications',
         importance: NotificationImportance.High,
-        defaultColor: Colors.blue,
+        defaultColor: const Color(0xFF1565C0),
         ledColor: Colors.white,
       ),
     ],
   );
 
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    DevicePreview(
+      enabled: true, // Enable device preview
+      tools: const [
+        ...DevicePreview.defaultTools,
+      ],
+      builder: (context) => const ProviderScope(
+        child: MyApp(),
+      ),
     ),
   );
 }
@@ -31,26 +38,24 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      useInheritedMediaQuery: true, // Required for device_preview
+      locale: DevicePreview.locale(context), // Set locale for device_preview
+      builder: DevicePreview.appBuilder, // Apply device_preview builder
       theme: ThemeData(
-        // General App Theme
-        colorScheme: ColorScheme.light(
-          primary:
-              Colors.blue.shade800, // Primary color (e.g., AppBar, buttons)
-
-          surface: Colors.white, // Surface color (e.g., cards, dialogs)
-          onPrimary: Colors.white, // Text/icon color on primary
-          onSecondary: Colors.black, // Text/icon color on secondary
-          onBackground: Colors.black, // Text color on background
-          onSurface: Colors.black, // Text color on surface
+        // Your existing theme configuration
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF1565C0),
+          surface: Colors.white,
+          onPrimary: Colors.white,
+          onSecondary: Colors.black,
+          onBackground: Colors.black,
+          onSurface: Colors.black,
         ),
-        useMaterial3: true, // Enable Material 3 design (optional)
-
-        // Typography
+        useMaterial3: true,
         textTheme: const TextTheme(
           displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
@@ -62,107 +67,97 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontSize: 14),
           bodySmall: TextStyle(fontSize: 12),
         ),
-        fontFamily: 'Cera Pro', // Custom font family
-
-        // AppBar Theme
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black, // AppBar text/icon color
-          elevation: 4, // AppBar shadow
-          centerTitle: true, // Center the title
-          titleTextStyle: const TextStyle(
+        fontFamily: 'Cera Pro',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: const Color(0xFF1565C0),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
             fontSize: 20,
-            color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
+          iconTheme: IconThemeData(
+            color: Colors.white,
+          ),
+          actionsIconTheme: IconThemeData(
+            color: Colors.white,
+          ),
         ),
-
-        // ElevatedButton Theme
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             iconColor: Colors.white,
-            backgroundColor: Colors.blue.shade800, // Button background color
-            foregroundColor: Colors.white, // Button text/icon color
+            backgroundColor: const Color(0xFF1565C0),
+            foregroundColor: Colors.white,
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12), // Rounded corners
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
 
-        // TextField Theme
         inputDecorationTheme: InputDecorationTheme(
-          filled: true, // Fill the background of the input field
-          fillColor: Colors.grey.shade100, // Light background color
+          filled: true,
+          fillColor: Colors.grey.shade100,
           contentPadding: const EdgeInsets.all(16),
           border: OutlineInputBorder(
-            borderSide: BorderSide.none, // No border
-            borderRadius: BorderRadius.circular(12), // Rounded corners
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide.none, // No border when enabled
+            borderSide: BorderSide.none,
             borderRadius: BorderRadius.circular(12),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.blue.shade800, // Border color when focused
+            borderSide: const BorderSide(
+              color: Color(0xFF1565C0),
               width: 2,
             ),
             borderRadius: BorderRadius.circular(12),
           ),
           labelStyle: TextStyle(
-            color: Colors.grey.shade600, // Label color
+            color: Colors.grey.shade600,
           ),
           hintStyle: TextStyle(
-            color: Colors.grey.shade500, // Hint text color
+            color: Colors.grey.shade500,
           ),
         ),
-
-        // Card Theme
         cardTheme: CardTheme(
-          elevation: 2, // Card shadow
+          elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Rounded corners
+            borderRadius: BorderRadius.circular(12),
           ),
           margin: const EdgeInsets.all(8),
         ),
-
-        // Icon Theme
         iconTheme: const IconThemeData(
-          color: Colors.white, // Default icon color
+          color: Colors.white,
         ),
-
-        // FloatingActionButton Theme
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Colors.blue, // FAB background color
-          foregroundColor: Colors.white, // FAB icon color
-          elevation: 4, // FAB shadow
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF1565C0),
+          foregroundColor: Colors.white,
+          elevation: 4,
         ),
-
-        // SnackBar Theme
         snackBarTheme: SnackBarThemeData(
-          backgroundColor: Colors.blue.shade800, // SnackBar background color
+          backgroundColor: const Color(0xFF1565C0),
           contentTextStyle: const TextStyle(
-            color: Colors.white, // SnackBar text color
+            color: Colors.white,
           ),
-          behavior: SnackBarBehavior.floating, // Floating SnackBar
+          behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Rounded corners
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
-
-        // Divider Theme
         dividerTheme: DividerThemeData(
-          color: Colors.grey.shade300, // Divider color
-          thickness: 1, // Divider thickness
-          space: 16, // Space around the divider
+          color: Colors.grey.shade300,
+          thickness: 1,
+          space: 16,
         ),
       ),
-      home: LoginPage(),
+      home: SplashScreen(),
     );
   }
 }

@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting
+
 import '../Controllers/medicineController.dart'; // Import the MedicineController
 import '../Models/medicine.dart';
+import '../Utils/Custom Widgets/detailListTile.dart';
 import 'editMedicine.dart'; // Import the EditMedicinePage
 
-class MedicineDetailsPage extends StatefulWidget {
+class MedicineDetailsPage extends ConsumerStatefulWidget {
   final Medicine medicine;
-  final MedicineNotifier
-      medicineController; // Use MedicineController instead of DatabaseHelper
 
   const MedicineDetailsPage({
     Key? key,
     required this.medicine,
-    required this.medicineController, // Pass the MedicineController
   }) : super(key: key);
 
   @override
-  State<MedicineDetailsPage> createState() => _MedicineDetailsPageState();
+  _MedicineDetailsPageState createState() => _MedicineDetailsPageState();
 }
 
-class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
+class _MedicineDetailsPageState extends ConsumerState<MedicineDetailsPage> {
   late Medicine _currentMedicine;
 
   @override
@@ -38,35 +38,6 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
     }
   }
 
-  // Helper function to build a detail row
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.blueGrey,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,7 +53,6 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
                 MaterialPageRoute(
                   builder: (context) => EditMedicinePage(
                     medicine: _currentMedicine,
-                    medicineController: widget.medicineController,
                   ),
                 ),
               );
@@ -124,20 +94,50 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
                 ),
               const SizedBox(height: 20),
 
-              // Medicine details using _buildDetailRow
-              _buildDetailRow('Name', _currentMedicine.name),
-              _buildDetailRow('Type', _currentMedicine.type),
-              _buildDetailRow('Dosage', _currentMedicine.dosage),
-              _buildDetailRow('Frequency', _currentMedicine.frequency),
-              if (_currentMedicine.frequency.contains('Weekly'))
-                _buildDetailRow('Day of the Week',
-                    _currentMedicine.frequency.replaceAll('Every ', '')),
-              _buildDetailRow('Times', _currentMedicine.time),
-              _buildDetailRow(
-                  'Start Date', _formatDate(_currentMedicine.startDate)),
-              _buildDetailRow(
-                  'End Date', _formatDate(_currentMedicine.endDate)),
-              _buildDetailRow('Notes', _currentMedicine.notes),
+              // Medicine details using custom DetailListTile
+              Column(
+                children: [
+                  DetailListTile(
+                    title: 'Name',
+                    value: _currentMedicine.name,
+                  ),
+                  DetailListTile(
+                    title: 'Type',
+                    value: _currentMedicine.type,
+                  ),
+                  DetailListTile(
+                    title: 'Dosage',
+                    value: _currentMedicine.dosage,
+                  ),
+                  DetailListTile(
+                    title: 'Frequency',
+                    value: _currentMedicine.frequency,
+                  ),
+                  if (_currentMedicine.frequency.contains('Weekly'))
+                    DetailListTile(
+                      title: 'Day of the Week',
+                      value:
+                          _currentMedicine.frequency.replaceAll('Every ', ''),
+                    ),
+                  DetailListTile(
+                    title: 'Times',
+                    value: _currentMedicine.time,
+                  ),
+                  DetailListTile(
+                    title: 'Start Date',
+                    value: _formatDate(_currentMedicine.startDate),
+                  ),
+                  DetailListTile(
+                    title: 'End Date',
+                    value: _formatDate(_currentMedicine.endDate),
+                  ),
+                  DetailListTile(
+                    title: 'Notes',
+                    value: _currentMedicine.notes,
+                    showDivider: false, // No divider after the last item
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 20),
 
@@ -146,11 +146,27 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // Handle the "Take Medicine" action
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Taking ${_currentMedicine.name}'),
-                      ),
+                    // Show an alert dialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog.adaptive(
+                          icon: const Icon(Icons.info_outline,
+                              color: Color(0xFF1565C0), size: 40),
+                          title: const Text('Coming Soon'),
+                          content: const Text(
+                              'Taking will be available in a future update. Stay tuned!'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                   icon: const Icon(Icons.medical_services),
@@ -171,7 +187,7 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
                     // Confirm deletion
                     final confirmed = await showDialog(
                       context: context,
-                      builder: (context) => AlertDialog(
+                      builder: (context) => AlertDialog.adaptive(
                         title: const Text('Delete Medicine'),
                         content: const Text(
                             'Are you sure you want to delete this medicine?'),
@@ -190,9 +206,28 @@ class _MedicineDetailsPageState extends State<MedicineDetailsPage> {
 
                     if (confirmed == true) {
                       // Delete the medicine from the database using the MedicineController
-                      await widget.medicineController
+                      await ref
+                          .read(medicineControllerProvider.notifier)
                           .deleteMedicine(_currentMedicine.id!);
-                      Navigator.pop(context);
+                      // Show success dialog
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog.adaptive(
+                          icon: const Icon(Icons.verified,
+                              color: Color(0xFF1565C0), size: 40),
+                          title: const Text('Success'),
+                          content: const Text('Medicine deleted successfully!'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                Navigator.pop(context, true);
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
                     }
                   },
                   icon: const Icon(Icons.delete),
