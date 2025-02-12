@@ -59,13 +59,6 @@ class _NotificationPermissionPageState extends State<NotificationPermissionPage>
     }
   }
 
-/*************  ✨ Codeium Command ⭐  *************/
-  /// Opens an alert dialog asking the user to enable notifications
-  /// and opens app settings to allow the user to enable notifications.
-  /// After the user returns from settings, rechecks notification permissions.
-  /// If the user allows notifications, initializes and navigates to the
-  /// ReminderListScreen. Otherwise, shows an error message.
-/******  18836c93-aa17-4a8f-a553-ad531f15b492  *******/
   Future<void> _requestNotificationPermission() async {
     bool userAllowed = await showDialog(
       context: context,
@@ -77,7 +70,10 @@ class _NotificationPermissionPageState extends State<NotificationPermissionPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
             TextButton(
               onPressed: () async {
