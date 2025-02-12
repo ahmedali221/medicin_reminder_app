@@ -1,73 +1,66 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import '../Helper Functions/functions.dart';
+
 class UserDetailsBar extends StatelessWidget {
   final String userName;
   final String userPhotoUrl; // This can be a URL or a local file path
   final VoidCallback onSearchPressed;
+  final BuildContext context; // Add context to access Scaffold
 
   const UserDetailsBar({
     Key? key,
     required this.userName,
     required this.userPhotoUrl,
     required this.onSearchPressed,
+    required this.context, // Pass context from the parent widget
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // User Photo
-          CircleAvatar(
-            radius: screenWidth * 0.08, // Responsive radius
-            backgroundImage: _getImageProvider(userPhotoUrl), // Load image
-            child: userPhotoUrl.isEmpty
-                ? Icon(
-                    Icons.person, // Default icon if no photo is available
-                    size: screenWidth * 0.08, // Responsive icon size
-                    color: Colors.grey,
-                  )
-                : null,
+          // Icon to open the drawer
+          IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer(); // Open the drawer
+            },
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.black,
+            ), // Hamburger menu icon
           ),
-          const SizedBox(width: 16), // Add spacing between avatar and text
+          // User Photo
+          // CircleAvatar(
+          //   radius: screenWidth * 0.08, // Responsive radius
+          //   backgroundImage: getImageProvider(userPhotoUrl), // Load image
+          //   child: userPhotoUrl.isEmpty
+          //       ? Icon(
+          //           Icons.person, // Default icon if no photo is available
+          //           size: screenWidth * 0.08, // Responsive icon size
+          //           color: Colors.grey,
+          //         )
+          //       : null,
+          // ),
+
           // User Name and Text
           Expanded(
             child: Row(
               children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "Hello, ", // "Hello" part
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Responsive font size
-                          fontWeight: FontWeight.normal,
-                          color: Colors.blue[900],
-                        ),
-                      ),
-                      TextSpan(
-                        text: userName, // User name part
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.045, // Responsive font size
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[900],
-                        ),
-                      ),
-                    ],
+                Expanded(
+                  child: Image.asset(
+                    "assets/medLogo.png",
+                    height: 30, // Adjusted height
+                    width: 50, // Adjusted width
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.waving_hand_outlined,
-                  color: Colors.black,
                 ),
               ],
             ),
@@ -81,16 +74,5 @@ class UserDetailsBar extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // Helper method to determine the correct image provider
-  ImageProvider _getImageProvider(String url) {
-    if (url.isEmpty) {
-      return const AssetImage('assets/placeholder.png');
-    } else if (url.startsWith('http') || url.startsWith('https')) {
-      return NetworkImage(url);
-    } else {
-      return FileImage(File(url));
-    }
   }
 }

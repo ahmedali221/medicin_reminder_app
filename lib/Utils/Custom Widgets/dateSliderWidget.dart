@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 class DateSlider extends StatefulWidget {
   final DateTime? selectedDate;
-  final Function(DateTime) onDateSelected;
+  final Function(DateTime?) onDateSelected;
 
   const DateSlider({
     Key? key,
@@ -42,7 +42,13 @@ class _DateSliderState extends State<DateSlider> {
 
             return GestureDetector(
               onTap: () {
-                widget.onDateSelected(date);
+                if (isSelected) {
+                  // If the date is already selected, unselect it by passing null
+                  widget.onDateSelected(null);
+                } else {
+                  // Otherwise, select the new date
+                  widget.onDateSelected(date);
+                }
               },
               child: Container(
                 width: screenWidth * 0.15, // Responsive width
